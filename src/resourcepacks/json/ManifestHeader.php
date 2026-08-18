@@ -33,16 +33,8 @@ final class ManifestHeader{
 	/** @required */
 	public string $uuid;
 
-	/**
-	 * @var int[]
-	 * @phpstan-var array{int, int, int}
-	 * @required
-	 */
-	public array $version;
+	/** @required */
+	public string $version;
 
-	/**
-	 * @var int[]
-	 * @phpstan-var array{int, int, int}
-	 */
-	public array $min_engine_version;
+	public string $min_engine_version;
 }

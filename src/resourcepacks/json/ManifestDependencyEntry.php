@@ -25,13 +25,10 @@ namespace pocketmine\resourcepacks\json;
 
 final class ManifestDependencyEntry{
 
-	/** @required */
-	public string $uuid;
+	public ?string $uuid = null;
 
-	/**
-	 * @var int[]
-	 * @phpstan-var array{int, int, int}
-	 * @required
-	 */
-	public array $version;
+	public ?string $module_name = null;
+
+	/** @required */
+	public string $version;
 }

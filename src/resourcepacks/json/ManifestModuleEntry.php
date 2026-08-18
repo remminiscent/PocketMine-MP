@@ -33,10 +33,6 @@ final class ManifestModuleEntry{
 	/** @required */
 	public string $uuid;
 
-	/**
-	 * @var int[]
-	 * @phpstan-var array{int, int, int}
-	 * @required
-	 */
-	public array $version;
+	/** @required */
+	public string $version;
 }

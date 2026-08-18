@@ -41,7 +41,7 @@ interface ResourcePack{
 	public function getPackSize() : int;
 
 	/**
-	 * Returns a version number for the pack in the format major.minor.patch
+	 * Returns the version declared by the pack manifest
 	 */
 	public function getPackVersion() : string;
 

@@ -28,6 +28,7 @@ use pocketmine\resourcepacks\json\Manifest;
 use pocketmine\utils\Utils;
 use Ramsey\Uuid\Uuid;
 use function assert;
+use function count;
 use function fclose;
 use function feof;
 use function file_exists;
@@ -37,7 +38,9 @@ use function fread;
 use function fseek;
 use function gettype;
 use function hash_file;
-use function implode;
+use function is_array;
+use function is_int;
+use function is_string;
 use function preg_match;
 use function strlen;
 
@@ -112,9 +115,10 @@ class ZippedResourcePack implements ResourcePack{
 		$mapper->bStrictObjectTypeChecking = true;
 
 		try{
+			self::normalizeManifestVersions($manifest);
 			/** @var Manifest $manifest */
 			$manifest = $mapper->map($manifest, new Manifest());
-		}catch(\JsonMapper_Exception $e){
+		}catch(\JsonMapper_Exception|\UnexpectedValueException $e){
 			throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
 		}
 		if(!Uuid::isValid($manifest->header->uuid)){
@@ -124,6 +128,56 @@ class ZippedResourcePack implements ResourcePack{
 		$this->manifest = $manifest;
 
 		$this->fileResource = fopen($zipPath, "rb");
+	}
+
+	private static function normalizeManifestVersions(\stdClass $manifest) : void{
+		if(isset($manifest->header) && $manifest->header instanceof \stdClass){
+			if(isset($manifest->header->version)){
+				$manifest->header->version = self::normalizeManifestVersion($manifest->header->version);
+			}
+			if(isset($manifest->header->min_engine_version)){
+				$manifest->header->min_engine_version = self::normalizeManifestVersion($manifest->header->min_engine_version);
+			}
+		}
+
+		if(isset($manifest->modules) && is_array($manifest->modules)){
+			foreach($manifest->modules as $module){
+				if($module instanceof \stdClass && isset($module->version)){
+					$module->version = self::normalizeManifestVersion($module->version);
+				}
+			}
+		}
+
+		if(isset($manifest->dependencies) && is_array($manifest->dependencies)){
+			foreach($manifest->dependencies as $dependency){
+				if($dependency instanceof \stdClass){
+					if(!isset($dependency->uuid) && !isset($dependency->module_name)){
+						throw new \UnexpectedValueException("Resource pack dependency must specify a UUID or module name");
+					}
+					if(isset($dependency->version)){
+						$dependency->version = self::normalizeManifestVersion($dependency->version);
+					}
+				}
+			}
+		}
+	}
+
+	private static function normalizeManifestVersion(mixed $version) : string{
+		if(is_string($version)){
+			return $version;
+		}
+		if(
+			!is_array($version) ||
+			count($version) !== 3 ||
+			!isset($version[0], $version[1], $version[2]) ||
+			!is_int($version[0]) ||
+			!is_int($version[1]) ||
+			!is_int($version[2])
+		){
+			throw new \UnexpectedValueException("Expected a SemVer string or an array of 3 integers, got " . gettype($version));
+		}
+
+		return $version[0] . "." . $version[1] . "." . $version[2];
 	}
 
 	public function __destruct(){
@@ -139,7 +193,7 @@ class ZippedResourcePack implements ResourcePack{
 	}
 
 	public function getPackVersion() : string{
-		return implode(".", $this->manifest->header->version);
+		return $this->manifest->header->version;
 	}
 
 	public function getPackId() : string{
