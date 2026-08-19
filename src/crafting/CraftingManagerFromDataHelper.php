@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\crafting;
 
+use pocketmine\block\VanillaBlocks;
 use pocketmine\crafting\json\ItemStackData;
 use pocketmine\crafting\json\PotionContainerChangeRecipeData;
 use pocketmine\crafting\json\PotionTypeRecipeData;
@@ -281,11 +282,19 @@ final class CraftingManagerFromDataHelper{
 				$outputs[] = $output;
 			}
 			//TODO: check unlocking requirements - our current system doesn't support this
-			$result->registerShapedRecipe(new ShapedRecipe(
-				$recipe->shape,
-				$inputs,
-				$outputs
-			));
+			if(count($outputs) === 1 && $outputs[0]->getBlock()->hasSameTypeId(VanillaBlocks::DECORATED_POT())){
+				$result->registerShapedRecipe(new DecoratedPotRecipe(
+					$recipe->shape,
+					$inputs,
+					$outputs
+				));
+			}else{
+				$result->registerShapedRecipe(new ShapedRecipe(
+					$recipe->shape,
+					$inputs,
+					$outputs
+				));
+			}
 		}
 
 		foreach(self::loadJsonArrayOfObjectsFile(Path::join($directoryPath, 'potion_type.json'), PotionTypeRecipeData::class) as $recipe){
